@@ -1,87 +1,71 @@
 import express from "express";
-import axios from "axios";
 import bodyParser from "body-parser";
+import pg from "pg";
 
+const db=new pg.Client({
+  user:"postgres",
+  host:"localhost",
+  database:"world",
+  password:"22-Feb-05",
+  port:5432
+});
 const app = express();
 const port = 3000;
-const API_URL = "https://secrets-api.appbrewery.com";
+db.connect();
+ 
 
-// HINTs: Use the axios documentation as well as the video lesson to help you.
-// https://axios-http.com/docs/post_example
-// Use the Secrets API documentation to figure out what each route expects and how to work with it.
-// https://secrets-api.appbrewery.com/
 
-//TODO 1: Add your own bearer token from the previous lesson.
-const yourBearerToken = "d0571db3-67d0-4dd1-8b5e-0c70c4c3b489";
-const config = {
-  headers: { Authorization: `Bearer ${yourBearerToken}` },
-};
 
+let quiz = [];
+db.query("SELECT * FROM capitals",(err,res)=>{
+  if(err){
+    console.error(err.stack);
+  }
+  else {
+    quiz=res.rows;
+  }
+});
+
+let totalCorrect = 0;
+
+// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
-app.get("/", (req, res) => {
-  res.render("index.ejs", { content: "Waiting for data..." });
+let currentQuestion = {};
+
+// GET home page
+app.get("/", async (req, res) => {
+  totalCorrect = 0;
+  await nextQuestion();
+  console.log(currentQuestion);
+  res.render("index.ejs", { question: currentQuestion });
 });
 
-app.post("/get-secret", async (req, res) => {
-  const searchId = req.body.id;
-  try {
-    const result = await axios.get(API_URL + "/secrets/" + searchId, config);
-    res.render("index.ejs", { content: JSON.stringify(result.data) });
-  } catch (error) {
-    res.render("index.ejs", { content: JSON.stringify(error.response.data) });
+// POST a new post
+app.post("/submit", (req, res) => {
+  let answer = req.body.answer.trim();
+  let isCorrect = false;
+  if (currentQuestion.capital.toLowerCase() === answer.toLowerCase()) {
+    totalCorrect++;
+    console.log(totalCorrect);
+    isCorrect = true;
   }
+
+  nextQuestion();
+  res.render("index.ejs", {
+    question: currentQuestion,
+    wasCorrect: isCorrect,
+    totalScore: totalCorrect,
+  });
 });
 
-app.post("/post-secret", async (req, res) => {
-  try{
-    const result = await axios.post(API_URL+"/secrets",req.body,config);
-    res.render("index.ejs",{content:JSON.stringify(result.data)})
-  } catch (error){
-    res.render("index.ejs",{content:JSON.stringify(error.result.data)})
-  }
-  // TODO 2: Use axios to POST the data from req.body to the secrets api servers.
-});
+async function nextQuestion() {
+  const randomCountry = quiz[Math.floor(Math.random() * quiz.length)];
 
-app.post("/put-secret", async (req, res) => {
-  const searchId = req.body.id;
-  try {
-    const result = await axios.put(
-      API_URL + "/secrets/" + searchId,
-      req.body,
-      config
-    );
-    res.render("index.ejs", { content: JSON.stringify(result.data) });
-  } catch (error) {
-    res.render("index.ejs", { content: JSON.stringify(error.response.data) });
-  }
-  // TODO 3: Use axios to PUT the data from req.body to the secrets api servers.
-});
-
-app.post("/patch-secret", async (req, res) => {
-  const searchId = req.body.id;
-  try{
-    const result=await axios.put(
-      API_URL+"/secrets/"+searchId,req.body,config
-    );
-    res.render("index.ejs",{content:JSON.stringify(result.data)});
-  } catch(error){
-    res.render("index.ejs",{content:JSON.stringify(error.result.data)});
-  }
-  // TODO 4: Use axios to PATCH the data from req.body to the secrets api servers.
-});
-
-app.post("/delete-secret", async (req, res) => {
-  const searchId = req.body.id;
-  try{
-    const result=await axios.delete(API_URL+"/secrets/"+searchId,config);
-    res.render("index.ejs",{content:JSON.stringify(result.data)});
-  } catch(error){
-    res.render("index.ejs",{content:JSON.stringify(error.result.data)});
-  }
-  // TODO 5: Use axios to DELETE the item with searchId from the secrets api servers.
-});
+  currentQuestion = randomCountry;
+}
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });
