@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do</title>
+    <link rel="stylesheet" href="todo.css">
+</head>
+<body>
+    <!-- <h2>Enter your list</h2>
+    <input type="text" class="js-input" onkeydown="if(event.key == 'Enter') addTasks();">
+    <button class="add" onclick="addTasks();">Add</button> -->
+
+    <h2>To Do List</h2>
+    <div class="todo-input">
+    <input class="js-input" onkeydown="if(event.key == 'Enter') addTasks();">
+    <input class="js-date" type="date">
+    <button class="add" onclick="addTasks();">Add</button>
+     </div>
+    <div class="displaytasks"></div> 
+    <script src="script.js"></script>
+<!--we cant use paragraph element to print another paragraph element dev will not add any space-->
+</body>
+</html>
